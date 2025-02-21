@@ -1,0 +1,63 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from statsmodels.tsa.holtwinters import ExponentialSmoothing
+
+np.random.seed(42)  
+dates = pd.date_range(start="2024-01-01", periods=100, freq='D')
+sales = np.random.randint(4000, 7000, size=len(dates))
+
+df = pd.DataFrame({'Sale_Date': dates, 'Daily_Revenue': sales})
+df.set_index('Sale_Date', inplace=True)
+
+print("📊 Sales Data Preview:\n", df.head())
+
+📊 Sales Data Preview:
+             Daily_Revenue
+Sale_Date                
+2024-01-01           4860
+2024-01-02           5294
+2024-01-03           5130
+2024-01-04           5095
+2024-01-05           5638
+
+plt.figure(figsize=(12, 6))
+sns.lineplot(data=df, x=df.index, y="Daily_Revenue", marker="o", color="blue")
+plt.xlabel("Date")
+plt.ylabel("Revenue")
+plt.title("📈 Daily Sales Trend")
+plt.grid()
+plt.show()
+
+model = ExponentialSmoothing(df['Daily_Revenue'], trend="add", seasonal="add", seasonal_periods=7)
+fit = model.fit()
+
+forecast_dates = pd.date_range(start=df.index[-1] + pd.Timedelta(days=1), periods=30)
+forecast_values = fit.forecast(30)
+
+df_forecast = pd.DataFrame({'Sale_Date': forecast_dates, 'Forecasted_Revenue': forecast_values.values})
+df_forecast.set_index('Sale_Date', inplace=True)
+
+print("\n📈 Sales Forecast for Next 5 Days:\n", df_forecast.head())
+📈 Sales Forecast for Next 5 Days:
+             Forecasted_Revenue
+Sale_Date                     
+2024-04-10         5024.583930
+2024-04-11         5163.922285
+2024-04-12         5734.027409
+2024-04-13         4834.576036
+2024-04-14         5159.838769
+
+plt.figure(figsize=(12, 6))
+plt.plot(df.index, df['Daily_Revenue'], label="Actual Sales", marker="o")
+plt.plot(df_forecast.index, df_forecast['Forecasted_Revenue'], label="Forecast", linestyle="dashed", color="red")
+plt.xlabel("Date")
+plt.ylabel("Revenue")
+plt.title("🔮 Sales Forecast for Next 30 Days")
+plt.legend()
+plt.grid()
+plt.show()
+
+df_forecast.to_excel("sales_forecast.xlsx")
+print("✅ Forecast saved as 'sales_forecast.xlsx'")
